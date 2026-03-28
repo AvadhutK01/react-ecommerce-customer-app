@@ -9,6 +9,10 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    config.params = {
+      ...config.params,
+      key: import.meta.env.VITE_FIREBASE_API_KEY,
+    };
     const token = localStorage.getItem('customer_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
