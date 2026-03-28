@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, Heart, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 const ProductCard = ({ product }) => {
   return (
@@ -10,14 +10,6 @@ const ProductCard = ({ product }) => {
           alt={product.name} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
         />
-        <div className="absolute top-4 right-4 flex flex-col gap-2 translate-x-12 group-hover:translate-x-0 transition-transform duration-500">
-          <button className="p-3 bg-white rounded-full shadow-lg hover:bg-primary-600 hover:text-white transition-colors">
-            <Heart size={18} />
-          </button>
-          <button className="p-3 bg-white rounded-full shadow-lg hover:bg-primary-600 hover:text-white transition-colors">
-            <ShoppingCart size={18} />
-          </button>
-        </div>
         {product.stock <= 5 && product.stock > 0 && (
           <div className="absolute top-4 left-4 bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg">
             Low Stock

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchHomeData } from '../features/products/productSlice';
 import { ArrowRight, Loader2, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
 
 const HomePage = () => {
@@ -42,12 +43,15 @@ const HomePage = () => {
               <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase">{category.name}</h2>
               <div className="h-1 w-20 bg-primary-600 mt-2 rounded-full" />
             </div>
-            <button className="group flex items-center gap-2 text-sm font-black text-gray-900 hover:text-primary-600 transition-colors uppercase tracking-widest">
+            <Link 
+              to={`/category/${category.id}`}
+              className="group flex items-center gap-2 text-sm font-black text-gray-900 hover:text-primary-600 transition-colors uppercase tracking-widest"
+            >
               Show More 
               <span className="p-2 bg-gray-900 text-white rounded-full group-hover:bg-primary-600 transition-colors">
                 <ArrowRight className="h-4 w-4" />
               </span>
-            </button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">

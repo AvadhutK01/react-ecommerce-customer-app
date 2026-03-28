@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
+import CategoryProductsPage from './pages/CategoryProductsPage';
 import Header from './components/layout/Header';
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/category/:categoryId" element={<CategoryProductsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

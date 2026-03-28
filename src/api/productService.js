@@ -16,7 +16,19 @@ export const getCategories = async (pageSize = 100) => {
   };
 };
 
-export const getProductsByCategory = async (categoryId, pageSize = 6) => {
+export const getCategoryById = async (categoryId) => {
+  const response = await axiosInstance.get(`/${CATEGORIES_COLLECTION}/${categoryId}`);
+  const doc = response.data;
+  return {
+    id: doc.name.split('/').pop(),
+    ...Object.keys(doc.fields).reduce((acc, key) => {
+      acc[key] = doc.fields[key].stringValue || doc.fields[key].integerValue || doc.fields[key].doubleValue || doc.fields[key].booleanValue;
+      return acc;
+    }, {})
+  };
+};
+
+export const getProductsByCategory = async (categoryId, limit = 10, offset = 0) => {
   const query = {
     structuredQuery: {
       from: [{ collectionId: COLLECTION }],
@@ -27,7 +39,8 @@ export const getProductsByCategory = async (categoryId, pageSize = 6) => {
           value: { stringValue: categoryId }
         }
       },
-      limit: pageSize
+      limit: limit,
+      offset: offset,
     }
   };
   const response = await axiosInstance.post(':runQuery', query);
