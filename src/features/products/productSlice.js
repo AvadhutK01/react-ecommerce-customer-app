@@ -33,6 +33,17 @@ export const fetchCategoryProducts = createAsyncThunk(
   }
 );
 
+export const fetchProductDetails = createAsyncThunk(
+  'products/fetchProductDetails',
+  async (productId, { rejectWithValue }) => {
+    try {
+      return await productService.getProductById(productId);
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const fetchCategoryDetails = createAsyncThunk(
   'products/fetchCategoryDetails',
   async (categoryId, { rejectWithValue }) => {
@@ -50,6 +61,7 @@ const productSlice = createSlice({
     homeCategories: [],
     categoryProducts: [],
     currentCategory: null,
+    currentProduct: null,
     currentPage: 0,
     hasMore: true,
     searchTerm: '',
@@ -81,6 +93,18 @@ const productSlice = createSlice({
       })
       .addCase(fetchCategoryDetails.fulfilled, (state, action) => {
         state.currentCategory = action.payload;
+      })
+      .addCase(fetchProductDetails.pending, (state) => {
+        state.isLoading = true;
+        state.currentProduct = null;
+      })
+      .addCase(fetchProductDetails.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentProduct = action.payload;
+      })
+      .addCase(fetchProductDetails.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
       })
       .addCase(fetchCategoryProducts.pending, (state, action) => {
         if (action.meta.arg.page === 0) state.isLoading = true;

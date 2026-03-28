@@ -3,29 +3,29 @@ import axiosInstance from './axiosInstance';
 const COLLECTION = 'products';
 const CATEGORIES_COLLECTION = 'categories';
 
+const mapFirestoreDoc = (doc) => ({
+  id: doc.name.split('/').pop(),
+  ...Object.keys(doc.fields).reduce((acc, key) => {
+    const field = doc.fields[key];
+    if (field.arrayValue) {
+      acc[key] = field.arrayValue.values?.map(v => v.stringValue || v.integerValue || v.doubleValue) || [];
+    } else {
+      acc[key] = field.stringValue || field.integerValue || field.doubleValue || field.booleanValue;
+    }
+    return acc;
+  }, {})
+});
+
 export const getCategories = async (pageSize = 100) => {
   const response = await axiosInstance.get(`/${CATEGORIES_COLLECTION}?pageSize=${pageSize}`);
   return {
-    items: response.data.documents?.map(doc => ({
-      id: doc.name.split('/').pop(),
-      ...Object.keys(doc.fields).reduce((acc, key) => {
-        acc[key] = doc.fields[key].stringValue || doc.fields[key].integerValue || doc.fields[key].doubleValue || doc.fields[key].booleanValue;
-        return acc;
-      }, {})
-    })) || [],
+    items: response.data.documents?.map(mapFirestoreDoc) || [],
   };
 };
 
 export const getCategoryById = async (categoryId) => {
   const response = await axiosInstance.get(`/${CATEGORIES_COLLECTION}/${categoryId}`);
-  const doc = response.data;
-  return {
-    id: doc.name.split('/').pop(),
-    ...Object.keys(doc.fields).reduce((acc, key) => {
-      acc[key] = doc.fields[key].stringValue || doc.fields[key].integerValue || doc.fields[key].doubleValue || doc.fields[key].booleanValue;
-      return acc;
-    }, {})
-  };
+  return mapFirestoreDoc(response.data);
 };
 
 export const getProductsByCategory = async (categoryId, limit = 10, offset = 0) => {
@@ -46,27 +46,17 @@ export const getProductsByCategory = async (categoryId, limit = 10, offset = 0) 
   const response = await axiosInstance.post(':runQuery', query);
   return response.data
     .filter(item => item.document)
-    .map(item => {
-      const doc = item.document;
-      return {
-        id: doc.name.split('/').pop(),
-        ...Object.keys(doc.fields).reduce((acc, key) => {
-          acc[key] = doc.fields[key].stringValue || doc.fields[key].integerValue || doc.fields[key].doubleValue || doc.fields[key].booleanValue;
-          return acc;
-        }, {})
-      };
-    });
+    .map(item => mapFirestoreDoc(item.document));
+};
+
+export const getProductById = async (productId) => {
+  const response = await axiosInstance.get(`/${COLLECTION}/${productId}`);
+  return mapFirestoreDoc(response.data);
 };
 
 export const searchProducts = async (nameRegex) => {
   const response = await axiosInstance.get(`/${COLLECTION}`);
-  const allProducts = response.data.documents?.map(doc => ({
-    id: doc.name.split('/').pop(),
-    ...Object.keys(doc.fields).reduce((acc, key) => {
-      acc[key] = doc.fields[key].stringValue || doc.fields[key].integerValue || doc.fields[key].doubleValue || doc.fields[key].booleanValue;
-      return acc;
-    }, {})
-  })) || [];
+  const allProducts = response.data.documents?.map(mapFirestoreDoc) || [];
 
   const regex = new RegExp(nameRegex, 'i');
   return allProducts.filter(p => regex.test(p.name));
