@@ -23,10 +23,15 @@ const productSlice = createSlice({
   name: 'products',
   initialState: {
     homeCategories: [],
+    searchTerm: '',
     isLoading: false,
     error: null,
   },
-  reducers: {},
+  reducers: {
+    setSearchTerm: (state, action) => {
+      state.searchTerm = action.payload;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchHomeData.pending, (state) => { state.isLoading = true; })
@@ -41,4 +46,5 @@ const productSlice = createSlice({
   }
 });
 
+export const { setSearchTerm } = productSlice.actions;
 export default productSlice.reducer;

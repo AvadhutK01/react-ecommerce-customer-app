@@ -1,10 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setSearchTerm } from '../../features/products/productSlice';
 import { ShoppingBag, Search, ShoppingCart, Menu, X } from 'lucide-react';
 
 const Header = () => {
+  const dispatch = useDispatch();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      dispatch(setSearchTerm(searchQuery));
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, dispatch]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    dispatch(setSearchTerm(searchQuery));
+  };
 
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
@@ -26,7 +42,7 @@ const Header = () => {
           </div>
 
           <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="w-full relative">
+            <form onSubmit={handleSubmit} className="w-full relative">
               <input
                 type="text"
                 placeholder="Search products..."
@@ -35,7 +51,7 @@ const Header = () => {
                 className="w-full bg-gray-50 border-none ring-1 ring-gray-100 pl-12 pr-4 py-3 rounded-full text-sm font-bold focus:ring-2 focus:ring-primary-600 transition-all outline-none"
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-4">
@@ -65,7 +81,7 @@ const Header = () => {
 
       <div className={`md:hidden bg-white border-t border-gray-100 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="p-4 space-y-4">
-          <div className="relative">
+          <form onSubmit={handleSubmit} className="relative">
             <input
               type="text"
               placeholder="Search..."
@@ -74,7 +90,7 @@ const Header = () => {
               className="w-full bg-gray-50 border-none ring-1 ring-gray-100 pl-12 pr-4 py-3 rounded-full text-sm font-bold focus:ring-2 focus:ring-primary-600 transition-all outline-none"
             />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </div>
+          </form>
           <div className="flex flex-col gap-2 pt-4 border-t border-gray-50">
             <button className="w-full py-3 bg-gray-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">Login</button>
             <button className="w-full py-3 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">Join Now</button>
