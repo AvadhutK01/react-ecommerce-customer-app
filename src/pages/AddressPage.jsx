@@ -52,6 +52,7 @@ const AddressPage = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingAddress(null);
+    formik.resetForm();
   };
 
   return (
@@ -129,7 +130,10 @@ const AddressPage = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative bg-white w-full max-w-2xl p-8 sm:p-12 rounded-[3.5rem] border border-gray-100 shadow-2xl animate-in fade-in zoom-in duration-300 overflow-y-auto max-h-[90vh]">
+          <div 
+            key={isModalOpen ? (editingAddress?.id || 'new') : 'closed'}
+            className="relative bg-white w-full max-w-2xl p-8 sm:p-12 rounded-[3.5rem] border border-gray-100 shadow-2xl animate-in fade-in zoom-in duration-300 overflow-y-auto max-h-[90vh]"
+          >
             <div className="flex items-center justify-between mb-10">
               <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">
                 {editingAddress ? 'Modify Address' : 'New Destination'}

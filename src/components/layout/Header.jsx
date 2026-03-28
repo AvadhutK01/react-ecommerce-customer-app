@@ -12,6 +12,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { totalQuantity } = useSelector((state) => state.cart);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -69,7 +70,11 @@ const Header = () => {
               className="p-3 hover:bg-gray-50 rounded-full text-gray-500 hover:text-primary-600 transition-all relative"
             >
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-primary-600 rounded-full border-2 border-white" />
+              {totalQuantity > 0 && (
+                <span className="absolute top-1 right-1 h-5 w-5 bg-primary-600 text-[10px] font-black text-white rounded-full border-2 border-white flex items-center justify-center">
+                  {totalQuantity}
+                </span>
+              )}
             </button>
 
             <div className="hidden md:flex items-center gap-2 pl-4 border-l border-gray-100">

@@ -2,15 +2,17 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductDetails, fetchCategoryDetails } from '../features/products/productSlice';
-import { Star, Loader2, ShoppingCart, Zap, ChevronRight, Heart } from 'lucide-react';
+import { addItem } from '../features/cart/cartSlice';
+import { Star, Loader2, ShoppingCart, Zap, ChevronRight, Heart, ShieldAlert } from 'lucide-react';
 
 const ProductDetailsPage = () => {
   const { productId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentProduct, currentCategory, isLoading } = useSelector((state) => state.products);
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated, isVerified } = useSelector((state) => state.auth);
   const [activeImage, setActiveImage] = useState(0);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     dispatch(fetchProductDetails(productId));
@@ -33,8 +35,26 @@ const ProductDetailsPage = () => {
   const handleProtectedAction = (action) => {
     if (!isAuthenticated) {
       navigate('/login');
-    } else {
-      // Logic for adding to cart or buying will go here in Phase 5
+      return;
+    }
+
+    if (action === 'buy' && !isVerified) {
+      setError('Please verify your email from the profile page to place orders.');
+      setTimeout(() => navigate('/profile'), 3000);
+      return;
+    }
+
+    const cartItem = {
+      id: currentProduct.id,
+      name: currentProduct.name,
+      price: Number(currentProduct.price),
+      thumbnail: currentProduct.thumbnail,
+    };
+
+    dispatch(addItem(cartItem));
+
+    if (action === 'buy') {
+      navigate('/checkout');
     }
   };
 
@@ -119,6 +139,13 @@ const ProductDetailsPage = () => {
             <p className="text-gray-500 text-lg leading-relaxed font-medium">
               {currentProduct.description}
             </p>
+
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                <ShieldAlert size={18} />
+                <span className="text-xs font-black uppercase tracking-widest">{error}</span>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button 
