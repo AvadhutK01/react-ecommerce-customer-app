@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { setSearchTerm } from '../../features/products/productSlice';
-import { ShoppingBag, Search, ShoppingCart, Menu, X } from 'lucide-react';
+import { logout } from '../../features/auth/authSlice';
+import { ShoppingBag, Search, ShoppingCart, Menu, X, LogOut, User, MapPin } from 'lucide-react';
 
 const Header = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -20,6 +24,11 @@ const Header = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     dispatch(setSearchTerm(searchQuery));
+  };
+
+  const handleCartClick = () => {
+    if (!isAuthenticated) navigate('/login');
+    else navigate('/cart');
   };
 
   return (
@@ -55,18 +64,54 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-3 hover:bg-gray-50 rounded-full text-gray-500 hover:text-primary-600 transition-all relative">
+            <button 
+              onClick={handleCartClick}
+              className="p-3 hover:bg-gray-50 rounded-full text-gray-500 hover:text-primary-600 transition-all relative"
+            >
               <ShoppingCart className="h-5 w-5" />
               <span className="absolute top-2 right-2 h-2 w-2 bg-primary-600 rounded-full border-2 border-white" />
             </button>
 
             <div className="hidden md:flex items-center gap-2 pl-4 border-l border-gray-100">
-              <button className="px-6 py-2.5 text-sm font-black text-gray-900 hover:text-primary-600 uppercase tracking-widest transition-all">
-                Login
-              </button>
-              <button className="px-6 py-2.5 bg-gray-900 text-white rounded-full text-sm font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-lg shadow-gray-200">
-                Join
-              </button>
+              {isAuthenticated ? (
+                <div className="flex items-center gap-4 ml-4">
+                   <div className="relative group/profile flex items-center gap-3 cursor-pointer">
+                     <Link to="/profile" className="flex items-center gap-3">
+                       <div className="h-8 w-8 bg-primary-50 rounded-full flex items-center justify-center text-primary-600 group-hover:bg-primary-600 group-hover:text-white transition-all">
+                         <User size={16} />
+                       </div>
+                       <span className="text-xs font-black uppercase text-gray-900 truncate max-w-[100px] border-b-2 border-transparent group-hover:border-primary-600 transition-all">{user.name}</span>
+                     </Link>
+                     
+                     <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-[2rem] shadow-2xl shadow-gray-200 border border-gray-100 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible transition-all duration-300 py-4 z-50 overflow-hidden">
+                        <Link to="/profile" className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-xs font-black uppercase tracking-widest text-gray-900">
+                          <User size={16} className="text-primary-600" />
+                          My Profile
+                        </Link>
+                        <Link to="/addresses" className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-xs font-black uppercase tracking-widest text-gray-900">
+                          <MapPin size={16} className="text-primary-600" />
+                          Addresses
+                        </Link>
+                        <button 
+                          onClick={() => dispatch(logout())}
+                          className="w-full flex items-center gap-3 px-6 py-4 hover:bg-red-50 transition-colors text-xs font-black uppercase tracking-widest text-red-500 border-t border-gray-50 mt-2 pt-4"
+                        >
+                          <LogOut size={16} />
+                          Sign Out
+                        </button>
+                     </div>
+                   </div>
+                </div>
+              ) : (
+                <>
+                  <Link to="/login" className="px-6 py-2.5 text-sm font-black text-gray-900 hover:text-primary-600 uppercase tracking-widest transition-all">
+                    Login
+                  </Link>
+                  <Link to="/register" className="px-6 py-2.5 bg-gray-900 text-white rounded-full text-sm font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-lg shadow-gray-200">
+                    Join
+                  </Link>
+                </>
+              )}
             </div>
 
             <button 
@@ -79,8 +124,8 @@ const Header = () => {
         </div>
       </div>
 
-      <div className={`md:hidden bg-white border-t border-gray-100 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="p-4 space-y-4">
+      <div className={`md:hidden bg-white border-t border-gray-100 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-[30rem] opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="p-4 space-y-4 text-left">
           <form onSubmit={handleSubmit} className="relative">
             <input
               type="text"
@@ -92,8 +137,29 @@ const Header = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           </form>
           <div className="flex flex-col gap-2 pt-4 border-t border-gray-50">
-            <button className="w-full py-3 bg-gray-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">Login</button>
-            <button className="w-full py-3 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">Join Now</button>
+            {isAuthenticated ? (
+               <>
+                 <Link to="/profile" className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl mb-2">
+                    <User size={18} className="text-primary-600" />
+                    <span className="text-sm font-black uppercase text-gray-900">{user.name}</span>
+                 </Link>
+                 <Link to="/addresses" className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-xs font-black uppercase tracking-widest text-gray-900 rounded-2xl">
+                    <MapPin size={18} className="text-primary-600" />
+                    Manage Addresses
+                 </Link>
+                 <button 
+                  onClick={() => dispatch(logout())}
+                  className="w-full py-4 bg-red-50 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]"
+                 >
+                   Logout
+                 </button>
+               </>
+            ) : (
+              <>
+                <Link to="/login" className="w-full py-4 bg-gray-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 text-center">Login</Link>
+                <Link to="/register" className="w-full py-4 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-center">Join Now</Link>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -2,7 +2,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import CategoryProductsPage from './pages/CategoryProductsPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import AddressPage from './pages/AddressPage';
 import Header from './components/layout/Header';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
   return (
@@ -14,6 +19,26 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/category/:categoryId" element={<CategoryProductsPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/addresses" 
+              element={
+                <ProtectedRoute>
+                  <AddressPage />
+                </ProtectedRoute>
+              } 
+            />
+            
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

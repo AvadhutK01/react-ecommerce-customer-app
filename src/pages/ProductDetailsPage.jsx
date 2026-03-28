@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductDetails, fetchCategoryDetails } from '../features/products/productSlice';
-import { Star, Loader2, ArrowLeft, ShoppingCart, Zap, ChevronRight } from 'lucide-react';
+import { Star, Loader2, ShoppingCart, Zap, ChevronRight, Heart } from 'lucide-react';
 
 const ProductDetailsPage = () => {
   const { productId } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { currentProduct, currentCategory, isLoading } = useSelector((state) => state.products);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
@@ -27,6 +29,14 @@ const ProductDetailsPage = () => {
     if (gallery.length > 0) return gallery;
     return [currentProduct.thumbnail];
   }, [currentProduct]);
+
+  const handleProtectedAction = (action) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    } else {
+      // Logic for adding to cart or buying will go here in Phase 5
+    }
+  };
 
   if (isLoading && !currentProduct) {
     return (
@@ -111,11 +121,17 @@ const ProductDetailsPage = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <button className="flex-1 py-5 bg-gray-950 text-white rounded-[2rem] text-sm font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl shadow-gray-200 active:scale-[0.98] flex items-center justify-center gap-3">
+              <button 
+                onClick={() => handleProtectedAction('cart')}
+                className="flex-1 py-5 bg-gray-950 text-white rounded-[2rem] text-sm font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl shadow-gray-200 active:scale-[0.98] flex items-center justify-center gap-3"
+              >
                 <ShoppingCart size={20} />
                 Add to Cart
               </button>
-              <button className="flex-1 py-5 bg-primary-600 text-white rounded-[2rem] text-sm font-black uppercase tracking-widest hover:bg-primary-700 transition-all shadow-xl shadow-primary-50 active:scale-[0.98] flex items-center justify-center gap-3">
+              <button 
+                onClick={() => handleProtectedAction('buy')}
+                className="flex-1 py-5 bg-primary-600 text-white rounded-[2rem] text-sm font-black uppercase tracking-widest hover:bg-primary-700 transition-all shadow-xl shadow-primary-50 active:scale-[0.98] flex items-center justify-center gap-3"
+              >
                 <Zap size={20} />
                 Buy It Now
               </button>
