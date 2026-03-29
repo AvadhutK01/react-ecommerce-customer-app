@@ -20,6 +20,28 @@ export const registerUser = createAsyncThunk(
         uid: response.data.localId,
         name: userData.name || response.data.email.split('@')[0]
       };
+      const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/customers`;
+      
+      try {
+        await axios.patch(`${FIRESTORE_URL}/${user.uid}`, {
+          fields: {
+            name: { stringValue: user.name },
+            email: { stringValue: user.email },
+            phone: { stringValue: '' },
+            totalOrders: { integerValue: 0 },
+            totalSpent: { doubleValue: 0 },
+            status: { stringValue: 'active' },
+            createdAt: { stringValue: new Date().toISOString() }
+          }
+        }, {
+          headers: {
+            Authorization: `Bearer ${response.data.idToken}`
+          }
+        });
+      } catch (firestoreError) {
+        console.error('Failed to create customer profile in database:', firestoreError);
+      }
 
       localStorage.setItem('customer_user', JSON.stringify(user));
       localStorage.setItem('customer_token', response.data.idToken);

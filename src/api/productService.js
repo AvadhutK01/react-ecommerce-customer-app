@@ -61,3 +61,28 @@ export const searchProducts = async (nameRegex) => {
   const regex = new RegExp(nameRegex, 'i');
   return allProducts.filter(p => regex.test(p.name));
 };
+
+const updateProductStock = async (productId, incrementAmount) => {
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+  const commitUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`;
+  
+  const payload = {
+    writes: [
+      {
+        transform: {
+          document: `projects/${projectId}/databases/(default)/documents/products/${productId}`,
+          fieldTransforms: [
+            {
+              fieldPath: 'stock',
+              increment: { integerValue: incrementAmount }
+            }
+          ]
+        }
+      }
+    ]
+  };
+  
+  await axiosInstance.post(commitUrl, payload);
+};
+
+export { updateProductStock };

@@ -5,6 +5,7 @@ import { fetchOrderDetail, clearCurrentOrder, updateOrderThunk } from '../featur
 import { ChevronLeft, Box, Calendar, CreditCard, MapPin, Truck, CheckCircle, Clock, PackageCheck, ShieldCheck, XCircle, Star, MessageSquare, AlertCircle } from 'lucide-react';
 import { ORDER_STATUS, PAYMENT_STATUS, getOrderStatusStyles, getPaymentStatusStyles } from '../utils/statusStyles';
 import * as reviewService from '../api/reviewService';
+import * as productService from '../api/productService';
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
@@ -50,7 +51,11 @@ const OrderDetailPage = () => {
       ...(currentOrder.paymentMethod === 'ONLINE' && { paymentStatus: PAYMENT_STATUS.REFUNDED })
     };
 
-    dispatch(updateOrderThunk({ orderId, data: updateData }));
+    await dispatch(updateOrderThunk({ orderId, data: updateData }));
+
+    for (const item of currentOrder.items) {
+      await productService.updateProductStock(item.id, item.quantity);
+    }
   };
 
   const handleMarkPaid = () => {

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchAddresses } from '../features/addresses/addressSlice';
 import { clearCart } from '../features/cart/cartSlice';
 import * as orderService from '../api/orderService';
+import * as productService from '../api/productService';
 import { MapPin, CreditCard, Banknote, CheckCircle, Loader2, ChevronRight, AlertCircle, ShoppingBag } from 'lucide-react';
 import { ORDER_STATUS, PAYMENT_STATUS } from '../utils/statusStyles';
 
@@ -76,6 +77,11 @@ const CheckoutPage = () => {
           };
 
           await orderService.createOrder(orderData);
+          
+          for (const item of cartItems) {
+            await productService.updateProductStock(item.id, -item.quantity);
+          }
+
           setOrderSuccess(true);
           dispatch(clearCart());
           setTimeout(() => navigate('/'), 5000);
@@ -145,6 +151,11 @@ const CheckoutPage = () => {
         };
 
         await orderService.createOrder(orderData);
+        
+        for (const item of cartItems) {
+          await productService.updateProductStock(item.id, -item.quantity);
+        }
+
         setOrderSuccess(true);
         dispatch(clearCart());
         setTimeout(() => navigate('/'), 5000);
