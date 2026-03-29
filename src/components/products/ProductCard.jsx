@@ -1,7 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Star } from 'lucide-react';
-
 const ProductCard = ({ product }) => {
   return (
     <Link to={`/product/${product.id}`} className="block group cursor-pointer h-full">
@@ -20,12 +18,8 @@ const ProductCard = ({ product }) => {
         </div>
         
         <div className="p-6 text-left flex-1 flex flex-col">
-          <div className="flex justify-between items-start mb-2">
+          <div className="mb-2">
             <p className="text-[10px] font-black text-primary-600 uppercase tracking-widest">{product.subcategory || 'Collection'}</p>
-            <div className="flex items-center gap-1 text-xs font-bold text-gray-400">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 border-none" />
-              4.8
-            </div>
           </div>
           <h3 className="font-bold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1 mb-2">
             {product.name}

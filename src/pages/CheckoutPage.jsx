@@ -5,6 +5,7 @@ import { fetchAddresses } from '../features/addresses/addressSlice';
 import { clearCart } from '../features/cart/cartSlice';
 import * as orderService from '../api/orderService';
 import { MapPin, CreditCard, Banknote, CheckCircle, Loader2, ChevronRight, AlertCircle, ShoppingBag } from 'lucide-react';
+import { ORDER_STATUS, PAYMENT_STATUS } from '../utils/statusStyles';
 
 const CheckoutPage = () => {
   const dispatch = useDispatch();
@@ -69,7 +70,8 @@ const CheckoutPage = () => {
             shippingAddress: selectedAddress,
             paymentMethod: 'ONLINE',
             paymentId: response.razorpay_payment_id,
-            status: 'PAID',
+            status: ORDER_STATUS.PENDING,
+            paymentStatus: PAYMENT_STATUS.PAID,
             createdAt: new Date().toISOString(),
           };
 
@@ -77,6 +79,25 @@ const CheckoutPage = () => {
           setOrderSuccess(true);
           dispatch(clearCart());
           setTimeout(() => navigate('/'), 5000);
+        },
+        modal: {
+          ondismiss: async () => {
+            const orderData = {
+              userId: user.uid,
+              customerName: user.name,
+              customerEmail: user.email,
+              items: cartItems,
+              totalAmount,
+              shippingAddress: selectedAddress,
+              paymentMethod: 'ONLINE',
+              status: ORDER_STATUS.REJECTED,
+              paymentStatus: PAYMENT_STATUS.FAILED,
+              createdAt: new Date().toISOString(),
+            };
+            await orderService.createOrder(orderData);
+            alert('Payment cancelled. Order recorded as failed.');
+            setIsPlacingOrder(false);
+          }
         },
         prefill: {
           name: user.name,
@@ -89,8 +110,25 @@ const CheckoutPage = () => {
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', async (response) => {
+        const orderData = {
+          userId: user.uid,
+          customerName: user.name,
+          customerEmail: user.email,
+          items: cartItems,
+          totalAmount,
+          shippingAddress: selectedAddress,
+          paymentMethod: 'ONLINE',
+          status: ORDER_STATUS.REJECTED,
+          paymentStatus: PAYMENT_STATUS.FAILED,
+          paymentErrorCode: response.error.code,
+          createdAt: new Date().toISOString(),
+        };
+        await orderService.createOrder(orderData);
+        alert('Payment failed: ' + response.error.description);
+        setIsPlacingOrder(false);
+      });
       rzp.open();
-      setIsPlacingOrder(false);
     } else {
       try {
         const orderData = {
@@ -101,7 +139,8 @@ const CheckoutPage = () => {
           totalAmount,
           shippingAddress: selectedAddress,
           paymentMethod: 'COD',
-          status: 'PENDING_COLLECTION',
+          status: ORDER_STATUS.PENDING,
+          paymentStatus: PAYMENT_STATUS.PENDING,
           createdAt: new Date().toISOString(),
         };
 

@@ -8,6 +8,8 @@ import ProfilePage from './pages/ProfilePage';
 import AddressPage from './pages/AddressPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import OrdersPage from './pages/OrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 import Header from './components/layout/Header';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -47,6 +49,24 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CheckoutPage />
+                </ProtectedRoute>
+              } 
+            />
+
+            <Route 
+              path="/orders" 
+              element={
+                <ProtectedRoute>
+                  <OrdersPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/order/:orderId" 
+              element={
+                <ProtectedRoute>
+                  <OrderDetailPage />
                 </ProtectedRoute>
               } 
             />

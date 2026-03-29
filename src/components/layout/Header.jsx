@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSearchTerm } from '../../features/products/productSlice';
 import { logout } from '../../features/auth/authSlice';
-import { ShoppingBag, Search, ShoppingCart, Menu, X, LogOut, User, MapPin } from 'lucide-react';
+import { ShoppingBag, Search, ShoppingCart, Menu, X, LogOut, User, MapPin, Package } from 'lucide-react';
 
 const Header = () => {
   const dispatch = useDispatch();
@@ -88,10 +88,14 @@ const Header = () => {
                        <span className="text-xs font-black uppercase text-gray-900 truncate max-w-[100px] border-b-2 border-transparent group-hover:border-primary-600 transition-all">{user.name}</span>
                      </Link>
                      
-                     <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-[2rem] shadow-2xl shadow-gray-200 border border-gray-100 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible transition-all duration-300 py-4 z-50 overflow-hidden">
+                     <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-[2rem] shadow-2xl shadow-gray-200 border border-gray-100 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible transition-all duration-300 py-4 z-50 overflow-hidden text-left">
                         <Link to="/profile" className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-xs font-black uppercase tracking-widest text-gray-900">
                           <User size={16} className="text-primary-600" />
                           My Profile
+                        </Link>
+                        <Link to="/orders" className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-xs font-black uppercase tracking-widest text-gray-900">
+                          <Package size={16} className="text-primary-600" />
+                          My Orders
                         </Link>
                         <Link to="/addresses" className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-xs font-black uppercase tracking-widest text-gray-900">
                           <MapPin size={16} className="text-primary-600" />
