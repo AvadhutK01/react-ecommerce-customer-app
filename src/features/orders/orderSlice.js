@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import * as orderService from '../../api/orderService';
+import * as orderService from './orderService';
+import * as productService from '../products/productService';
 
 export const fetchOrders = createAsyncThunk(
   'orders/fetchOrders',
@@ -34,6 +35,36 @@ export const updateOrderThunk = createAsyncThunk(
   }
 );
 
+export const placeOrderThunk = createAsyncThunk(
+  'orders/placeOrder',
+  async ({ orderData, cartItems }, { rejectWithValue }) => {
+    try {
+      const order = await orderService.createOrder(orderData);
+      for (const item of cartItems) {
+        await productService.updateProductStock(item.id, -item.quantity);
+      }
+      return order;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const cancelOrderThunk = createAsyncThunk(
+  'orders/cancelOrder',
+  async ({ orderId, updateData, items }, { rejectWithValue }) => {
+    try {
+      const updated = await orderService.updateOrder(orderId, updateData);
+      for (const item of items) {
+        await productService.updateProductStock(item.id, item.quantity);
+      }
+      return updated;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: 'orders',
   initialState: {
@@ -41,6 +72,8 @@ const orderSlice = createSlice({
     currentOrder: null,
     isLoading: false,
     isDetailLoading: false,
+    isPlacing: false,
+    isCancelling: false,
     error: null,
   },
   reducers: {
@@ -79,6 +112,29 @@ const orderSlice = createSlice({
         state.currentOrder = action.payload;
         const index = state.items.findIndex(item => item.id === action.payload.id);
         if (index !== -1) state.items[index] = action.payload;
+      })
+      .addCase(placeOrderThunk.pending, (state) => {
+        state.isPlacing = true;
+        state.error = null;
+      })
+      .addCase(placeOrderThunk.fulfilled, (state) => {
+        state.isPlacing = false;
+      })
+      .addCase(placeOrderThunk.rejected, (state, action) => {
+        state.isPlacing = false;
+        state.error = action.payload;
+      })
+      .addCase(cancelOrderThunk.pending, (state) => {
+        state.isCancelling = true;
+        state.error = null;
+      })
+      .addCase(cancelOrderThunk.fulfilled, (state, action) => {
+        state.isCancelling = false;
+        state.currentOrder = action.payload;
+      })
+      .addCase(cancelOrderThunk.rejected, (state, action) => {
+        state.isCancelling = false;
+        state.error = action.payload;
       });
   }
 });

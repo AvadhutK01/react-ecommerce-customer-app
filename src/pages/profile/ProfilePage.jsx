@@ -2,8 +2,9 @@ import React, { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateProfile, sendVerificationEmail, checkAuthStatus, clearError } from '../features/auth/authSlice';
-import { User, Mail, ShieldCheck, ShieldAlert, Loader2, CheckCircle, Save, Send } from 'lucide-react';
+import { updateProfile, sendVerificationEmail, checkAuthStatus, clearError } from '../../features/auth/authSlice';
+import { User, Mail, ShieldCheck, ShieldAlert, CheckCircle, Save, Send } from 'lucide-react';
+import Loader from '../../components/common/Loader';
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
@@ -75,7 +76,7 @@ const ProfilePage = () => {
                   disabled={isUpdating || !formik.dirty}
                   className="flex items-center justify-center gap-3 w-full py-5 bg-gray-950 text-white rounded-[2rem] text-sm font-black uppercase tracking-widest hover:bg-primary-600 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                 >
-                  {isUpdating ? <Loader2 className="animate-spin h-5 w-5" /> : <Save size={18} />}
+                  {isUpdating ? <Loader size="sm" className="border-white border-t-white/30" /> : <Save size={18} />}
                   Save Changes
                 </button>
               </form>
@@ -110,7 +111,7 @@ const ProfilePage = () => {
                   disabled={isSendingVerification || verificationSent}
                   className="flex items-center justify-center gap-2 w-full py-4 bg-white border border-orange-200 text-orange-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all disabled:opacity-50"
                 >
-                  {isSendingVerification ? <Loader2 className="animate-spin h-4 w-4" /> : (verificationSent ? (
+                  {isSendingVerification ? <Loader size="sm" /> : (verificationSent ? (
                     <>
                       <CheckCircle size={14} />
                       Link Sent

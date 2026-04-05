@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOrders } from '../features/orders/orderSlice';
+import { fetchOrders } from '../../features/orders/orderSlice';
 import { Package, Calendar, CreditCard, ChevronRight, ShoppingBag, Clock, CheckCircle, Truck, PackageCheck, XCircle, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getOrderStatusStyles, ORDER_STATUS } from '../utils/statusStyles';
+import { getOrderStatusStyles, ORDER_STATUS } from '../../utils/statusStyles';
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
@@ -17,7 +17,6 @@ const OrdersPage = () => {
   }, [dispatch, user]);
 
   const getStatusIcon = (status) => {
-    console.log(status)
     switch (status) {
       case ORDER_STATUS.DELIVERED: return <PackageCheck size={14} />;
       case ORDER_STATUS.SHIPPED: return <Truck size={14} />;

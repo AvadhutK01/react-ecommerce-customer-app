@@ -1,55 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { getFriendlyErrorMessage } from '../../utils/errorMessages';
+import * as authService from './authService';
 
-const API_KEY = import.meta.env.VITE_FIREBASE_API_KEY;
-const AUTH_BASE_URL = 'https://identitytoolkit.googleapis.com/v1/accounts';
 
 export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${AUTH_BASE_URL}:signUp?key=${API_KEY}`, {
-         email: userData.email,
-         password: userData.password,
-         returnSecureToken: true
-      });
-      
-      const user = {
-        email: response.data.email,
-        uid: response.data.localId,
-        name: userData.name || response.data.email.split('@')[0]
-      };
-      const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-      const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/customers`;
-      
-      try {
-        await axios.patch(`${FIRESTORE_URL}/${user.uid}`, {
-          fields: {
-            name: { stringValue: user.name },
-            email: { stringValue: user.email },
-            phone: { stringValue: '' },
-            totalOrders: { integerValue: 0 },
-            totalSpent: { doubleValue: 0 },
-            status: { stringValue: 'active' },
-            createdAt: { stringValue: new Date().toISOString() }
-          }
-        }, {
-          headers: {
-            Authorization: `Bearer ${response.data.idToken}`
-          }
-        });
-      } catch (firestoreError) {
-        console.error('Failed to create customer profile in database:', firestoreError);
-      }
-
-      localStorage.setItem('customer_user', JSON.stringify(user));
-      localStorage.setItem('customer_token', response.data.idToken);
-      
-      return { user, token: response.data.idToken };
+      const { user, token } = await authService.registerUser(userData.email, userData.password, userData.name);
+      return { user, token };
     } catch (error) {
-      const message = error.response?.data?.error?.message || 'Registration failed';
-      return rejectWithValue(getFriendlyErrorMessage(message));
+      return rejectWithValue(getFriendlyErrorMessage(error.message || error));
     }
   }
 );
@@ -58,25 +19,10 @@ export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${AUTH_BASE_URL}:signInWithPassword?key=${API_KEY}`, {
-        email: userData.email,
-        password: userData.password,
-        returnSecureToken: true
-      });
-
-      const user = {
-        email: response.data.email,
-        uid: response.data.localId,
-        name: response.data.displayName || response.data.email.split('@')[0]
-      };
-
-      localStorage.setItem('customer_user', JSON.stringify(user));
-      localStorage.setItem('customer_token', response.data.idToken);
-
-      return { user, token: response.data.idToken };
+      const { user, token } = await authService.loginUser(userData.email, userData.password);
+      return { user, token };
     } catch (error) {
-      const message = error.response?.data?.error?.message || 'Login failed';
-      return rejectWithValue(getFriendlyErrorMessage(message));
+      return rejectWithValue(getFriendlyErrorMessage(error.message || error));
     }
   }
 );
@@ -86,22 +32,10 @@ export const updateProfile = createAsyncThunk(
   async ({ name }, { getState, rejectWithValue }) => {
     try {
       const { token } = getState().auth;
-      const response = await axios.post(`${AUTH_BASE_URL}:update?key=${API_KEY}`, {
-        idToken: token,
-        displayName: name,
-        returnSecureToken: true
-      });
-
-      const updatedUser = {
-        ...getState().auth.user,
-        name: response.data.displayName
-      };
-      localStorage.setItem('customer_user', JSON.stringify(updatedUser));
-      
+      const updatedUser = await authService.updateProfile(token, name, getState().auth.user);
       return { user: updatedUser };
     } catch (error) {
-      const message = error.response?.data?.error?.message || 'Update failed';
-      return rejectWithValue(getFriendlyErrorMessage(message));
+      return rejectWithValue(getFriendlyErrorMessage(error.message || error));
     }
   }
 );
@@ -111,13 +45,10 @@ export const sendVerificationEmail = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     try {
       const { token } = getState().auth;
-      await axios.post(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${API_KEY}`, {
-        idToken: token,
-        requestType: 'VERIFY_EMAIL'
-      });
+      await authService.sendVerificationEmail(token);
       return true;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error?.message || 'Failed to send verification email');
+      return rejectWithValue(error.message || 'Failed to send verification email');
     }
   }
 );
@@ -128,23 +59,10 @@ export const checkAuthStatus = createAsyncThunk(
     try {
       const { token } = getState().auth;
       if (!token) return null;
-      
-      const response = await axios.post(`${AUTH_BASE_URL}:lookup?key=${API_KEY}`, {
-        idToken: token
-      });
-      
-      const userData = response.data.users[0];
-      const user = {
-        email: userData.email,
-        uid: userData.localId,
-        name: userData.displayName || userData.email.split('@')[0],
-        isVerified: userData.emailVerified
-      };
-      
-      localStorage.setItem('customer_user', JSON.stringify(user));
+      const user = await authService.checkAuthStatus(token);
       return user;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error?.message || 'Session expired');
+      return rejectWithValue(error.message || 'Session expired');
     }
   }
 );
@@ -153,14 +71,10 @@ export const forgotPassword = createAsyncThunk(
   'auth/forgotPassword',
   async (email, { rejectWithValue }) => {
     try {
-      await axios.post(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${API_KEY}`, {
-        email,
-        requestType: 'PASSWORD_RESET'
-      });
+      await authService.forgotPassword(email);
       return true;
     } catch (error) {
-      const message = error.response?.data?.error?.message || 'Failed to send reset email';
-      return rejectWithValue(getFriendlyErrorMessage(message));
+      return rejectWithValue(getFriendlyErrorMessage(error.message || error));
     }
   }
 );
@@ -206,6 +120,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.isVerified = action.payload.user.isVerified || false;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -217,6 +132,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.isVerified = action.payload.user.isVerified || false;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -244,6 +160,13 @@ const authSlice = createSlice({
           state.user = action.payload;
           state.isVerified = action.payload.isVerified;
         }
+      })
+      .addCase(checkAuthStatus.rejected, (state) => {
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem('customer_user');
+        localStorage.removeItem('customer_token');
       })
       .addCase(forgotPassword.pending, (state) => {
         state.isForgotPasswordLoading = true;

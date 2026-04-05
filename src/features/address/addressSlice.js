@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import * as addressService from '../../api/addressService';
+import * as addressService from './addressService';
 
 export const fetchAddresses = createAsyncThunk(
   'addresses/fetchAddresses',

@@ -1,6 +1,5 @@
-import axiosInstance from './axiosInstance';
-
-const COLLECTION = 'orders';
+import { firestoreApi } from '../../api/axiosInstance';
+import ENDPOINTS from '../../api/endpoints';
 
 const mapToFirestoreFields = (data) => {
   const fields = {};
@@ -60,16 +59,16 @@ const mapFirestoreDoc = (doc) => ({
   }, {})
 });
 
-export const createOrder = async (orderData) => {
+const createOrder = async (orderData) => {
   const fields = mapToFirestoreFields(orderData);
-  const response = await axiosInstance.post(`/${COLLECTION}`, { fields });
+  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.ORDERS, { fields });
   return response.data;
 };
 
-export const getUserOrders = async (userId) => {
+const getUserOrders = async (userId) => {
   const query = {
     structuredQuery: {
-      from: [{ collectionId: COLLECTION }],
+      from: [{ collectionId: 'orders' }],
       where: {
         fieldFilter: {
           field: { fieldPath: 'userId' },
@@ -80,20 +79,22 @@ export const getUserOrders = async (userId) => {
       orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }]
     }
   };
-  const response = await axiosInstance.post(':runQuery', query);
+  const response = await firestoreApi.post(':runQuery', query);
   return response.data
     .filter(item => item.document)
     .map(item => mapFirestoreDoc(item.document));
 };
 
-export const getOrderById = async (orderId) => {
-  const response = await axiosInstance.get(`/${COLLECTION}/${orderId}`);
+const getOrderById = async (orderId) => {
+  const response = await firestoreApi.get(`${ENDPOINTS.FIRESTORE.ORDERS}/${orderId}`);
   return mapFirestoreDoc(response.data);
 };
 
-export const updateOrder = async (orderId, data) => {
+const updateOrder = async (orderId, data) => {
   const fields = mapToFirestoreFields(data);
   const updateMask = Object.keys(data).map(key => `updateMask.fieldPaths=${key}`).join('&');
-  const response = await axiosInstance.patch(`/${COLLECTION}/${orderId}?${updateMask}`, { fields });
+  const response = await firestoreApi.patch(`${ENDPOINTS.FIRESTORE.ORDERS}/${orderId}?${updateMask}`, { fields });
   return mapFirestoreDoc(response.data);
 };
+
+export { createOrder, getUserOrders, getOrderById, updateOrder };

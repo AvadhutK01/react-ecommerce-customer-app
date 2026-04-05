@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchHomeData } from '../features/products/productSlice';
-import { ArrowRight, Loader2, Search } from 'lucide-react';
+import { fetchHomeData } from '../../features/products/productSlice';
+import { ArrowRight, Search } from 'lucide-react';
+import Loader from '../../components/common/Loader';
 import { Link } from 'react-router-dom';
-import ProductCard from '../components/products/ProductCard';
+import ProductCard from '../../components/products/ProductCard';
 
 const HomePage = () => {
   const dispatch = useDispatch();
@@ -26,30 +27,26 @@ const HomePage = () => {
   }, [homeCategories, searchTerm]);
 
   if (isLoading && homeCategories.length === 0) {
-    return (
-      <div className="h-[80vh] flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary-600" />
-      </div>
-    );
+    return <Loader fullPage />;
   }
 
   return (
     <div className="space-y-16 py-10 pb-20">
       {filteredCategories.map((category) => (
         <section key={category.id} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-end mb-10 text-left">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12 text-left">
             <div>
-              <p className="text-xs font-black text-primary-600 uppercase tracking-[0.3em] mb-2">Discover</p>
-              <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase">{category.name}</h2>
+              <p className="text-[10px] font-black text-primary-600 uppercase tracking-[0.3em] mb-2">Discover</p>
+              <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tighter uppercase">{category.name}</h2>
               <div className="h-1 w-20 bg-primary-600 mt-2 rounded-full" />
             </div>
             <Link 
               to={`/category/${category.id}`}
-              className="group flex items-center gap-2 text-sm font-black text-gray-900 hover:text-primary-600 transition-colors uppercase tracking-widest"
+              className="group flex items-center gap-3 text-[10px] font-black text-gray-950 hover:text-primary-600 transition-colors uppercase tracking-widest bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-2xl sm:rounded-none"
             >
-              Show More 
-              <span className="p-2 bg-gray-900 text-white rounded-full group-hover:bg-primary-600 transition-colors">
-                <ArrowRight className="h-4 w-4" />
+              Show Collection
+              <span className="p-2 bg-gray-950 text-white rounded-full group-hover:bg-primary-600 transition-colors">
+                <ArrowRight className="h-3 w-3" />
               </span>
             </Link>
           </div>

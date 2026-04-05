@@ -1,6 +1,5 @@
-import axiosInstance from './axiosInstance';
-
-const COLLECTION = 'reviews';
+import { firestoreApi } from '../../api/axiosInstance';
+import ENDPOINTS from '../../api/endpoints';
 
 const mapToFirestoreFields = (data) => {
   const fields = {};
@@ -32,16 +31,16 @@ const mapFirestoreDoc = (doc) => ({
   }, {})
 });
 
-export const addReview = async (reviewData) => {
+const addReview = async (reviewData) => {
   const fields = mapToFirestoreFields(reviewData);
-  const response = await axiosInstance.post(`/${COLLECTION}`, { fields });
+  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.REVIEWS, { fields });
   return mapFirestoreDoc(response.data);
 };
 
-export const getReviewsByProduct = async (productId) => {
+const getReviewsByProduct = async (productId) => {
   const query = {
     structuredQuery: {
-      from: [{ collectionId: COLLECTION }],
+      from: [{ collectionId: 'reviews' }],
       where: {
         fieldFilter: {
           field: { fieldPath: 'productId' },
@@ -51,17 +50,17 @@ export const getReviewsByProduct = async (productId) => {
       }
     }
   };
-  const response = await axiosInstance.post(':runQuery', query);
+  const response = await firestoreApi.post(':runQuery', query);
   return response.data
     .filter(item => item.document)
     .map(item => mapFirestoreDoc(item.document))
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 };
 
-export const getUserProductReview = async (userId, productId) => {
+const getUserProductReview = async (userId, productId) => {
   const query = {
     structuredQuery: {
-      from: [{ collectionId: COLLECTION }],
+      from: [{ collectionId: 'reviews' }],
       where: {
         compositeFilter: {
           op: 'AND',
@@ -73,14 +72,16 @@ export const getUserProductReview = async (userId, productId) => {
       }
     }
   };
-  const response = await axiosInstance.post(':runQuery', query);
+  const response = await firestoreApi.post(':runQuery', query);
   const docs = response.data.filter(item => item.document);
   return docs.length > 0 ? mapFirestoreDoc(docs[0].document) : null;
 };
 
-export const updateReview = async (reviewId, reviewData) => {
+const updateReview = async (reviewId, reviewData) => {
   const fields = mapToFirestoreFields(reviewData);
   const updateMask = Object.keys(reviewData).map(key => `updateMask.fieldPaths=${key}`).join('&');
-  const response = await axiosInstance.patch(`/${COLLECTION}/${reviewId}?${updateMask}`, { fields });
+  const response = await firestoreApi.patch(`${ENDPOINTS.FIRESTORE.REVIEWS}/${reviewId}?${updateMask}`, { fields });
   return mapFirestoreDoc(response.data);
 };
+
+export { addReview, getReviewsByProduct, getUserProductReview, updateReview };

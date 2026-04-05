@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSearchTerm } from '../../features/products/productSlice';
 import { logout } from '../../features/auth/authSlice';
@@ -8,23 +8,34 @@ import { ShoppingBag, Search, ShoppingCart, Menu, X, LogOut, User, MapPin, Packa
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { totalQuantity } = useSelector((state) => state.cart);
 
+  const isSearchPage = location.pathname === '/' || location.pathname.startsWith('/category/');
+
   useEffect(() => {
+    if (!isSearchPage) {
+      setSearchQuery('');
+      dispatch(setSearchTerm(''));
+      return;
+    }
+
     const delayDebounceFn = setTimeout(() => {
       dispatch(setSearchTerm(searchQuery));
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, dispatch]);
+  }, [searchQuery, dispatch, isSearchPage]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(setSearchTerm(searchQuery));
+    if (isSearchPage) {
+      dispatch(setSearchTerm(searchQuery));
+    }
   };
 
   const handleCartClick = () => {
@@ -52,16 +63,18 @@ const Header = () => {
           </div>
 
           <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <form onSubmit={handleSubmit} className="w-full relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-50 border-none ring-1 ring-gray-100 pl-12 pr-4 py-3 rounded-full text-sm font-bold focus:ring-2 focus:ring-primary-600 transition-all outline-none"
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            </form>
+            {isSearchPage && (
+              <form onSubmit={handleSubmit} className="w-full relative animate-in fade-in slide-in-from-top-1 duration-300">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-gray-50 border-none ring-1 ring-gray-100 pl-12 pr-4 py-3 rounded-full text-sm font-bold focus:ring-2 focus:ring-primary-600 transition-all outline-none"
+                />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </form>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -135,38 +148,73 @@ const Header = () => {
 
       <div className={`md:hidden bg-white border-t border-gray-100 transition-all duration-300 overflow-hidden ${isMenuOpen ? 'max-h-[30rem] opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="p-4 space-y-4 text-left">
-          <form onSubmit={handleSubmit} className="relative">
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border-none ring-1 ring-gray-100 pl-12 pr-4 py-3 rounded-full text-sm font-bold focus:ring-2 focus:ring-primary-600 transition-all outline-none"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          </form>
+          {isSearchPage && (
+            <form onSubmit={handleSubmit} className="relative animate-in fade-in slide-in-from-top-1 duration-300">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 border-none ring-1 ring-gray-100 pl-12 pr-4 py-3 rounded-full text-sm font-bold focus:ring-2 focus:ring-primary-600 transition-all outline-none"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </form>
+          )}
           <div className="flex flex-col gap-2 pt-4 border-t border-gray-50">
             {isAuthenticated ? (
                <>
-                 <Link to="/profile" className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl mb-2">
+                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl mb-2">
+                    <div className="h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold">
+                      {user.name?.charAt(0) || <User size={20} />}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Logged in as</p>
+                      <p className="text-sm font-black uppercase text-gray-900">{user.name}</p>
+                    </div>
+                 </div>
+                 
+                 <Link 
+                   to="/profile" 
+                   onClick={() => setIsMenuOpen(false)}
+                   className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 rounded-2xl"
+                 >
                     <User size={18} className="text-primary-600" />
-                    <span className="text-sm font-black uppercase text-gray-900">{user.name}</span>
+                    My Profile
                  </Link>
-                 <Link to="/addresses" className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-colors text-xs font-black uppercase tracking-widest text-gray-900 rounded-2xl">
+
+                 <Link 
+                   to="/orders" 
+                   onClick={() => setIsMenuOpen(false)}
+                   className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 rounded-2xl"
+                 >
+                    <Package size={18} className="text-primary-600" />
+                    My Orders
+                 </Link>
+
+                 <Link 
+                   to="/addresses" 
+                   onClick={() => setIsMenuOpen(false)}
+                   className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 rounded-2xl"
+                 >
                     <MapPin size={18} className="text-primary-600" />
                     Manage Addresses
                  </Link>
+                 
                  <button 
-                  onClick={() => dispatch(logout())}
-                  className="w-full py-4 bg-red-50 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]"
+                  onClick={() => {
+                    dispatch(logout());
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-3 py-5 bg-red-50 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mt-4 hover:bg-red-500 hover:text-white transition-all"
                  >
-                   Logout
+                   <LogOut size={16} />
+                   Sign Out
                  </button>
                </>
             ) : (
               <>
-                <Link to="/login" className="w-full py-4 bg-gray-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 text-center">Login</Link>
-                <Link to="/register" className="w-full py-4 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-center">Join Now</Link>
+                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="w-full py-5 bg-gray-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 text-center hover:bg-gray-100 transition-all">Login</Link>
+                <Link to="/register" onClick={() => setIsMenuOpen(false)} className="w-full py-5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-center hover:bg-primary-600 transition-all shadow-lg shadow-gray-200">Join Now</Link>
               </>
             )}
           </div>

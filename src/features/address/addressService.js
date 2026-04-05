@@ -1,6 +1,5 @@
-import axiosInstance from './axiosInstance';
-
-const COLLECTION = 'addresses';
+import { firestoreApi } from '../../api/axiosInstance';
+import ENDPOINTS from '../../api/endpoints';
 
 const mapFirestoreDoc = (doc) => ({
   id: doc.name.split('/').pop(),
@@ -11,10 +10,10 @@ const mapFirestoreDoc = (doc) => ({
   }, {})
 });
 
-export const getAddresses = async (userId) => {
+const getAddresses = async (userId) => {
   const query = {
     structuredQuery: {
-      from: [{ collectionId: COLLECTION }],
+      from: [{ collectionId: 'addresses' }],
       where: {
         fieldFilter: {
           field: { fieldPath: 'userId' },
@@ -24,28 +23,28 @@ export const getAddresses = async (userId) => {
       }
     }
   };
-  const response = await axiosInstance.post(':runQuery', query);
+  const response = await firestoreApi.post(':runQuery', query);
   return response.data
     .filter(item => item.document)
     .map(item => mapFirestoreDoc(item.document));
 };
 
-export const addAddress = async (addressData) => {
+const addAddress = async (addressData) => {
   const fields = Object.keys(addressData).reduce((acc, key) => {
     acc[key] = { stringValue: String(addressData[key]) };
     return acc;
   }, {});
-
-  const response = await axiosInstance.post(`/${COLLECTION}`, { fields });
+  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.ADDRESSES, { fields });
   return mapFirestoreDoc(response.data);
 };
 
-export const updateAddress = async (addressId, addressData) => {
+const updateAddress = async (addressId, addressData) => {
   const fields = Object.keys(addressData).reduce((acc, key) => {
     acc[key] = { stringValue: String(addressData[key]) };
     return acc;
   }, {});
-
-  const response = await axiosInstance.patch(`/${COLLECTION}/${addressId}`, { fields });
+  const response = await firestoreApi.patch(`${ENDPOINTS.FIRESTORE.ADDRESSES}/${addressId}`, { fields });
   return mapFirestoreDoc(response.data);
 };
+
+export { getAddresses, addAddress, updateAddress };

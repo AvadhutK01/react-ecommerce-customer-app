@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import * as productService from '../../api/productService';
+import * as productService from './productService';
 
 export const fetchHomeData = createAsyncThunk(
   'products/fetchHomeData',
@@ -8,8 +8,9 @@ export const fetchHomeData = createAsyncThunk(
       const { items: categories } = await productService.getCategories();
       const categoryData = await Promise.all(
         categories.slice(0, 4).map(async (cat) => {
-          const products = await productService.getProductsByCategory(cat.id, 6);
-          return { ...cat, products };
+          const products = await productService.getProductsByCategory(cat.id, 12);
+          const inStockProducts = products.filter(p => Number(p.stock) > 0).slice(0, 6);
+          return { ...cat, products: inStockProducts };
         })
       );
       return categoryData.filter(cat => cat.products && cat.products.length > 0);
@@ -23,10 +24,11 @@ export const fetchCategoryProducts = createAsyncThunk(
   'products/fetchCategoryProducts',
   async ({ categoryId, page = 0 }, { rejectWithValue }) => {
     try {
-      const limit = 10;
+      const limit = 20;
       const offset = page * limit;
       const products = await productService.getProductsByCategory(categoryId, limit, offset);
-      return { products, page, hasMore: products.length === limit };
+      const inStockProducts = products.filter(p => Number(p.stock) > 0);
+      return { products: inStockProducts, page, hasMore: products.length === limit };
     } catch (error) {
       return rejectWithValue(error.message);
     }

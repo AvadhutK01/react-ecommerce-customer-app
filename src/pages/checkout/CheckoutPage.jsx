@@ -1,23 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { fetchAddresses } from '../features/addresses/addressSlice';
-import { clearCart } from '../features/cart/cartSlice';
-import * as orderService from '../api/orderService';
-import * as productService from '../api/productService';
-import { MapPin, CreditCard, Banknote, CheckCircle, Loader2, ChevronRight, AlertCircle, ShoppingBag } from 'lucide-react';
-import { ORDER_STATUS, PAYMENT_STATUS } from '../utils/statusStyles';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { fetchAddresses } from '../../features/address/addressSlice';
+import { clearCart } from '../../features/cart/cartSlice';
+import { placeOrderThunk } from '../../features/orders/orderSlice';
+import Loader from '../../components/common/Loader';
+import { MapPin, CreditCard, Banknote, CheckCircle, ChevronRight, AlertCircle, ShoppingBag } from 'lucide-react';
+import { ORDER_STATUS, PAYMENT_STATUS } from '../../utils/statusStyles';
 
 const CheckoutPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const buyNowItem = location.state?.buyNowItem;
+
   const { user } = useSelector((state) => state.auth);
   const { items: addresses, isLoading: isAddressesLoading } = useSelector((state) => state.addresses);
   const { items: cartItems, totalAmount } = useSelector((state) => state.cart);
+  const { isPlacing } = useSelector((state) => state.orders);
+
+  const itemsToProcess = buyNowItem ? [buyNowItem] : cartItems;
+  const amountToProcess = buyNowItem ? (buyNowItem.price * buyNowItem.quantity) : totalAmount;
 
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('ONLINE'); // ONLINE or COD
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('ONLINE');
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   useEffect(() => {
@@ -34,8 +40,13 @@ const CheckoutPage = () => {
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.id = 'razorpay-sdk';
       script.onload = () => resolve(true);
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
@@ -43,127 +54,75 @@ const CheckoutPage = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedAddress) return;
+    if (!selectedAddress || isPlacing) return;
 
-    setIsPlacingOrder(true);
+    const buildOrderData = (extra = {}) => ({
+      userId: user.uid,
+      customerName: user.name,
+      customerEmail: user.email,
+      items: itemsToProcess,
+      totalAmount: amountToProcess,
+      shippingAddress: selectedAddress,
+      paymentMethod,
+      createdAt: new Date().toISOString(),
+      ...extra,
+    });
 
-    if (paymentMethod === 'ONLINE') {
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        alert('Razorpay SDK failed to load. Are you online?');
-        setIsPlacingOrder(false);
-        return;
-      }
+    try {
+      if (paymentMethod === 'ONLINE') {
+        const isLoaded = await loadRazorpayScript();
+        if (!isLoaded) {
+          alert('Razorpay SDK failed to load. Are you online?');
+          return;
+        }
 
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: totalAmount * 100,
-        currency: 'INR',
-        name: 'Ecommerce Store',
-        description: 'Luxury Purchase Transaction',
-        handler: async (response) => {
-          const orderData = {
-            userId: user.uid,
-            customerName: user.name,
-            customerEmail: user.email,
-            items: cartItems,
-            totalAmount,
-            shippingAddress: selectedAddress,
-            paymentMethod: 'ONLINE',
-            paymentId: response.razorpay_payment_id,
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: amountToProcess * 100,
+          currency: 'INR',
+          name: 'Ecommerce Store',
+          description: 'Purchase Transaction',
+          handler: async (response) => {
+            const result = await dispatch(placeOrderThunk({
+              orderData: buildOrderData({
+                paymentId: response.razorpay_payment_id,
+                status: ORDER_STATUS.PENDING,
+                paymentStatus: PAYMENT_STATUS.PAID,
+              }),
+              cartItems: itemsToProcess,
+            }));
+            if (!result.error) {
+              setOrderSuccess(true);
+              if (!buyNowItem) {
+                dispatch(clearCart());
+              }
+              setTimeout(() => navigate('/'), 5000);
+            }
+          },
+          prefill: { name: user.name, email: user.email, contact: selectedAddress.phone },
+          theme: { color: '#1d4ed8' },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        const result = await dispatch(placeOrderThunk({
+          orderData: buildOrderData({
             status: ORDER_STATUS.PENDING,
-            paymentStatus: PAYMENT_STATUS.PAID,
-            createdAt: new Date().toISOString(),
-          };
-
-          await orderService.createOrder(orderData);
-          
-          for (const item of cartItems) {
-            await productService.updateProductStock(item.id, -item.quantity);
-          }
-
+            paymentStatus: PAYMENT_STATUS.PENDING,
+          }),
+          cartItems: itemsToProcess,
+        }));
+        if (!result.error) {
           setOrderSuccess(true);
-          dispatch(clearCart());
-          setTimeout(() => navigate('/'), 5000);
-        },
-        modal: {
-          ondismiss: async () => {
-            const orderData = {
-              userId: user.uid,
-              customerName: user.name,
-              customerEmail: user.email,
-              items: cartItems,
-              totalAmount,
-              shippingAddress: selectedAddress,
-              paymentMethod: 'ONLINE',
-              status: ORDER_STATUS.REJECTED,
-              paymentStatus: PAYMENT_STATUS.FAILED,
-              createdAt: new Date().toISOString(),
-            };
-            await orderService.createOrder(orderData);
-            alert('Payment cancelled. Order recorded as failed.');
-            setIsPlacingOrder(false);
+          if (!buyNowItem) {
+            dispatch(clearCart());
           }
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-          contact: selectedAddress.phone
-        },
-        theme: {
-          color: '#1d4ed8'
+          setTimeout(() => navigate('/'), 5000);
         }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', async (response) => {
-        const orderData = {
-          userId: user.uid,
-          customerName: user.name,
-          customerEmail: user.email,
-          items: cartItems,
-          totalAmount,
-          shippingAddress: selectedAddress,
-          paymentMethod: 'ONLINE',
-          status: ORDER_STATUS.REJECTED,
-          paymentStatus: PAYMENT_STATUS.FAILED,
-          paymentErrorCode: response.error.code,
-          createdAt: new Date().toISOString(),
-        };
-        await orderService.createOrder(orderData);
-        alert('Payment failed: ' + response.error.description);
-        setIsPlacingOrder(false);
-      });
-      rzp.open();
-    } else {
-      try {
-        const orderData = {
-          userId: user.uid,
-          customerName: user.name,
-          customerEmail: user.email,
-          items: cartItems,
-          totalAmount,
-          shippingAddress: selectedAddress,
-          paymentMethod: 'COD',
-          status: ORDER_STATUS.PENDING,
-          paymentStatus: PAYMENT_STATUS.PENDING,
-          createdAt: new Date().toISOString(),
-        };
-
-        await orderService.createOrder(orderData);
-        
-        for (const item of cartItems) {
-          await productService.updateProductStock(item.id, -item.quantity);
-        }
-
-        setOrderSuccess(true);
-        dispatch(clearCart());
-        setTimeout(() => navigate('/'), 5000);
-      } catch (error) {
-        console.error('Order failed:', error);
-      } finally {
-        setIsPlacingOrder(false);
       }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -185,13 +144,13 @@ const CheckoutPage = () => {
     );
   }
 
-  if (cartItems.length === 0) {
+  if (itemsToProcess.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <div className="p-8 bg-gray-50 rounded-full inline-flex mb-8 text-gray-200">
           <ShoppingBag size={64} />
         </div>
-        <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">Cart is empty</h2>
+        <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">Your selection is empty</h2>
         <button onClick={() => navigate('/')} className="mt-8 px-10 py-4 bg-primary-600 text-white rounded-full font-black uppercase text-xs tracking-widest">Shop Now</button>
       </div>
     );
@@ -207,7 +166,7 @@ const CheckoutPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-12">
-          {/* Section 1: Shipping Address */}
+
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black uppercase tracking-widest text-gray-900 flex items-center gap-3">
@@ -242,7 +201,7 @@ const CheckoutPage = () => {
             </div>
           </div>
 
-          {/* Section 2: Payment Method */}
+
           <div className="space-y-6">
             <h2 className="text-xl font-black uppercase tracking-widest text-gray-900 flex items-center gap-3">
               <div className="w-8 h-8 bg-gray-900 text-white rounded-lg flex items-center justify-center text-xs">02</div>
@@ -279,13 +238,13 @@ const CheckoutPage = () => {
           </div>
         </div>
 
-        {/* Sidebar Summary */}
+
         <div className="space-y-8">
           <div className="bg-white p-10 rounded-[3.5rem] border border-gray-100 shadow-2xl shadow-gray-200/50 sticky top-24">
             <h3 className="text-lg font-black uppercase tracking-widest text-gray-900 mb-8 border-b border-gray-50 pb-6">Order Summary</h3>
 
             <div className="space-y-4 mb-8 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-              {cartItems.map(item => (
+              {itemsToProcess.map(item => (
                 <div key={item.id} className="flex items-center gap-4">
                   <img src={item.thumbnail} className="w-12 h-12 rounded-xl object-cover bg-gray-50" alt="" />
                   <div className="flex-1 min-w-0">
@@ -300,7 +259,7 @@ const CheckoutPage = () => {
             <div className="space-y-4 mb-10 pt-6 border-t border-gray-50">
               <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 <span>Subtotal</span>
-                <span>₹{totalAmount.toLocaleString()}</span>
+                <span>₹{amountToProcess.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center text-[10px] font-bold text-green-500 uppercase tracking-widest">
                 <span>Shipping</span>
@@ -308,16 +267,16 @@ const CheckoutPage = () => {
               </div>
               <div className="flex justify-between items-end pt-2">
                 <span className="text-xs font-black uppercase tracking-widest text-gray-900">Final Total</span>
-                <span className="text-3xl font-black tracking-tighter text-primary-600">₹{totalAmount.toLocaleString()}</span>
+                <span className="text-3xl font-black tracking-tighter text-primary-600">₹{amountToProcess.toLocaleString()}</span>
               </div>
             </div>
 
             <button
-              disabled={!selectedAddress || isPlacingOrder}
+              disabled={!selectedAddress || isPlacing}
               onClick={handlePlaceOrder}
               className="w-full py-6 bg-gray-950 text-white rounded-[2rem] text-sm font-black uppercase tracking-[0.2em] hover:bg-primary-600 transition-all shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
             >
-              {isPlacingOrder ? <Loader2 className="animate-spin h-5 w-5" /> : <ChevronRight size={18} />}
+              {isPlacing ? <Loader size="sm" className="border-white border-t-white/30" /> : <ChevronRight size={18} />}
               {paymentMethod === 'ONLINE' ? 'Pay Now' : 'Place Order'}
             </button>
 

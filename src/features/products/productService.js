@@ -1,7 +1,7 @@
-import axiosInstance from './axiosInstance';
+import { firestoreApi } from '../../api/axiosInstance';
+import ENDPOINTS from '../../api/endpoints';
 
-const COLLECTION = 'products';
-const CATEGORIES_COLLECTION = 'categories';
+const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
 const mapFirestoreDoc = (doc) => ({
   id: doc.name.split('/').pop(),
@@ -16,22 +16,22 @@ const mapFirestoreDoc = (doc) => ({
   }, {})
 });
 
-export const getCategories = async (pageSize = 100) => {
-  const response = await axiosInstance.get(`/${CATEGORIES_COLLECTION}?pageSize=${pageSize}`);
+const getCategories = async (pageSize = 100) => {
+  const response = await firestoreApi.get(`${ENDPOINTS.FIRESTORE.CATEGORIES}?pageSize=${pageSize}`);
   return {
     items: response.data.documents?.map(mapFirestoreDoc) || [],
   };
 };
 
-export const getCategoryById = async (categoryId) => {
-  const response = await axiosInstance.get(`/${CATEGORIES_COLLECTION}/${categoryId}`);
+const getCategoryById = async (categoryId) => {
+  const response = await firestoreApi.get(`${ENDPOINTS.FIRESTORE.CATEGORIES}/${categoryId}`);
   return mapFirestoreDoc(response.data);
 };
 
-export const getProductsByCategory = async (categoryId, limit = 10, offset = 0) => {
+const getProductsByCategory = async (categoryId, limit = 10, offset = 0) => {
   const query = {
     structuredQuery: {
-      from: [{ collectionId: COLLECTION }],
+      from: [{ collectionId: 'products' }],
       where: {
         fieldFilter: {
           field: { fieldPath: 'categoryId' },
@@ -43,46 +43,48 @@ export const getProductsByCategory = async (categoryId, limit = 10, offset = 0) 
       offset: offset,
     }
   };
-  const response = await axiosInstance.post(':runQuery', query);
+  const response = await firestoreApi.post(':runQuery', query);
   return response.data
     .filter(item => item.document)
     .map(item => mapFirestoreDoc(item.document));
 };
 
-export const getProductById = async (productId) => {
-  const response = await axiosInstance.get(`/${COLLECTION}/${productId}`);
+const getProductById = async (productId) => {
+  const response = await firestoreApi.get(`${ENDPOINTS.FIRESTORE.PRODUCTS}/${productId}`);
   return mapFirestoreDoc(response.data);
 };
 
-export const searchProducts = async (nameRegex) => {
-  const response = await axiosInstance.get(`/${COLLECTION}`);
+const searchProducts = async (nameRegex) => {
+  const response = await firestoreApi.get(ENDPOINTS.FIRESTORE.PRODUCTS);
   const allProducts = response.data.documents?.map(mapFirestoreDoc) || [];
-
   const regex = new RegExp(nameRegex, 'i');
   return allProducts.filter(p => regex.test(p.name));
 };
 
 const updateProductStock = async (productId, incrementAmount) => {
-  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-  const commitUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:commit`;
-  
   const payload = {
     writes: [
       {
         transform: {
-          document: `projects/${projectId}/databases/(default)/documents/products/${productId}`,
+          document: `projects/${PROJECT_ID}/databases/(default)/documents/products/${productId}`,
           fieldTransforms: [
             {
               fieldPath: 'stock',
-              increment: { integerValue: incrementAmount }
+              increment: { integerValue: Number(incrementAmount) }
             }
           ]
         }
       }
     ]
   };
-  
-  await axiosInstance.post(commitUrl, payload);
+  await firestoreApi.post(':commit', payload);
 };
 
-export { updateProductStock };
+export { 
+  getCategories, 
+  getCategoryById, 
+  getProductsByCategory, 
+  getProductById, 
+  searchProducts, 
+  updateProductStock 
+};

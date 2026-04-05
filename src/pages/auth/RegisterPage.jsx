@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser, clearError } from '../features/auth/authSlice';
+import { registerUser, clearError } from '../../features/auth/authSlice';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShoppingBag, ArrowRight, Loader2, AlertCircle, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { ShoppingBag, ArrowRight, AlertCircle, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import Loader from '../../components/common/Loader';
 
 const RegisterPage = () => {
   const dispatch = useDispatch();
@@ -88,7 +89,7 @@ const RegisterPage = () => {
             disabled={isLoading}
             className="group relative w-full flex justify-center py-5 px-4 border border-transparent text-sm font-black rounded-[2rem] text-white bg-gray-950 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all uppercase tracking-widest shadow-xl active:scale-[0.98] disabled:opacity-50"
           >
-            {isLoading ? <Loader2 className="animate-spin h-5 w-5" /> : (
+            {isLoading ? <Loader size="sm" className="border-white border-t-white/30" /> : (
               <span className="flex items-center gap-2">
                 Start Exploring
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />

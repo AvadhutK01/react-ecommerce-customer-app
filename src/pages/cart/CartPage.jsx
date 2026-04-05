@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { removeItem, updateQuantity } from '../features/cart/cartSlice';
+import { removeItem, updateQuantity } from '../../features/cart/cartSlice';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, ChevronLeft, CreditCard } from 'lucide-react';
 
 const CartPage = () => {
@@ -67,8 +67,9 @@ const CartPage = () => {
                     </button>
                     <span className="w-12 text-center text-sm font-black text-gray-900">{item.quantity}</span>
                     <button 
+                      disabled={item.quantity >= Number(item.stock)}
                       onClick={() => dispatch(updateQuantity({ id: item.id, quantity: item.quantity + 1 }))}
-                      className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all text-gray-400 hover:text-primary-600"
+                      className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all text-gray-400 hover:text-primary-600 disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <Plus size={16} />
                     </button>

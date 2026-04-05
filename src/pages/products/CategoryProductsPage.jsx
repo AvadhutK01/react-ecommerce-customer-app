@@ -1,26 +1,27 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCategoryProducts, fetchCategoryDetails, resetCategoryProgress } from '../features/products/productSlice';
-import ProductCard from '../components/products/ProductCard';
-import { Search, Loader2 } from 'lucide-react';
+import { fetchCategoryProducts, fetchCategoryDetails, resetCategoryProgress } from '../../features/products/productSlice';
+import ProductCard from '../../components/products/ProductCard';
+import { Search } from 'lucide-react';
+import Loader from '../../components/common/Loader';
 
 const CategoryProductsPage = () => {
   const { categoryId } = useParams();
   const dispatch = useDispatch();
   const observer = useRef();
-  
-  const { 
-    categoryProducts, 
+
+  const {
+    categoryProducts,
     currentCategory,
-    isLoading, 
-    isPaginating, 
-    hasMore, 
+    isLoading,
+    isPaginating,
+    hasMore,
     currentPage,
-    searchTerm 
+    searchTerm
   } = useSelector((state) => state.products);
-  
-  const [priceRange, setPriceRange] = useState(200000);
+
+  const [priceRange, setPriceRange] = useState(500000);
   const [selectedSubcats, setSelectedSubcats] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
 
@@ -61,16 +62,12 @@ const CategoryProductsPage = () => {
 
     if (sortBy === 'price-low') products.sort((a, b) => a.price - b.price);
     if (sortBy === 'price-high') products.sort((a, b) => b.price - a.price);
-    
+
     return products;
   }, [categoryProducts, searchTerm, priceRange, selectedSubcats, sortBy]);
 
   if (isLoading && categoryProducts.length === 0) {
-    return (
-      <div className="h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-      </div>
-    );
+    return <Loader fullPage />;
   }
 
   return (
@@ -84,7 +81,7 @@ const CategoryProductsPage = () => {
           <div className="h-1.5 w-32 bg-primary-600 rounded-full" />
         </div>
         <div className="flex items-center gap-4">
-          <select 
+          <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="px-6 py-3 bg-white border border-gray-100 rounded-full font-bold outline-none focus:ring-4 focus:ring-primary-50 transition-all text-sm appearance-none cursor-pointer"
@@ -102,10 +99,10 @@ const CategoryProductsPage = () => {
             <div>
               <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-6">Price Ceiling</h3>
               <div className="space-y-4">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="200000" 
+                <input
+                  type="range"
+                  min="0"
+                  max="500000"
                   step="5000"
                   value={priceRange}
                   onChange={(e) => setPriceRange(Number(e.target.value))}
@@ -123,8 +120,8 @@ const CategoryProductsPage = () => {
                 <div className="space-y-3">
                   {subcategories.map(sub => (
                     <label key={sub} className="flex items-center gap-3 cursor-pointer group">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="w-5 h-5 rounded-lg border-gray-200 text-primary-600 focus:ring-primary-400"
                         checked={selectedSubcats.includes(sub)}
                         onChange={(e) => {
@@ -139,7 +136,7 @@ const CategoryProductsPage = () => {
               </div>
             )}
 
-            <button 
+            <button
               onClick={() => { setPriceRange(200000); setSelectedSubcats([]); }}
               className="w-full pt-4 text-xs font-black text-red-500 hover:text-red-600 uppercase tracking-widest transition-colors"
             >
@@ -172,9 +169,9 @@ const CategoryProductsPage = () => {
 
           {isPaginating && (
             <div className="py-10 flex justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+              <Loader size="md" />
             </div>
-          ) }
+          )}
         </div>
       </div>
     </div>
