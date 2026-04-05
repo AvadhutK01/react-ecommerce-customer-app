@@ -12,7 +12,9 @@ const ENDPOINTS = {
     ORDERS: '/orders',
     ADDRESSES: '/addresses',
     REVIEWS: '/reviews',
-    CUSTOMERS: '/customers'
+    CUSTOMERS: '/customers',
+    CARTS: '/carts',
+    RUNQUERY: ':runQuery'
   }
 };
 

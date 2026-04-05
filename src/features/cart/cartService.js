@@ -48,53 +48,36 @@ const mapFirestoreDoc = (doc) => ({
       }, {});
     } else if (field.arrayValue) {
       acc[key] = field.arrayValue.values?.map(val => {
-        return Object.keys(val.mapValue.fields).reduce((mAcc, mKey) => {
-          const mField = val.mapValue.fields[mKey];
-          mAcc[mKey] = mField.stringValue || Number(mField.doubleValue) || Number(mField.integerValue) || mField.booleanValue;
-          return mAcc;
-        }, {});
+        if (val.mapValue) {
+          return Object.keys(val.mapValue.fields).reduce((mAcc, mKey) => {
+            const mField = val.mapValue.fields[mKey];
+            mAcc[mKey] = mField.stringValue || Number(mField.doubleValue) || Number(mField.integerValue) || mField.booleanValue;
+            return mAcc;
+          }, {});
+        }
+        return val.stringValue || Number(val.doubleValue) || Number(val.integerValue) || val.booleanValue;
       }) || [];
     }
     return acc;
   }, {})
 });
 
-const createOrder = async (orderData) => {
-  const fields = mapToFirestoreFields(orderData);
-  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.ORDERS, { fields });
-  return response.data;
-};
-
-const getUserOrders = async (userId) => {
-  const query = {
-    structuredQuery: {
-      from: [{ collectionId: 'orders' }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: 'userId' },
-          op: 'EQUAL',
-          value: { stringValue: userId }
-        }
-      },
-      orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }]
+const getCart = async (userId) => {
+  try {
+    const response = await firestoreApi.get(`${ENDPOINTS.FIRESTORE.CARTS}/${userId}`);
+    return mapFirestoreDoc(response.data);
+  } catch (error) {
+    if (error.response?.status === 404) {
+      return { items: [] };
     }
-  };
-  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.RUNQUERY, query);
-  return response.data
-    .filter(item => item.document)
-    .map(item => mapFirestoreDoc(item.document));
+    throw error;
+  }
 };
 
-const getOrderById = async (orderId) => {
-  const response = await firestoreApi.get(`${ENDPOINTS.FIRESTORE.ORDERS}/${orderId}`);
+const updateCart = async (userId, items) => {
+  const fields = mapToFirestoreFields({ items });
+  const response = await firestoreApi.patch(`${ENDPOINTS.FIRESTORE.CARTS}/${userId}`, { fields });
   return mapFirestoreDoc(response.data);
 };
 
-const updateOrder = async (orderId, data) => {
-  const fields = mapToFirestoreFields(data);
-  const updateMask = Object.keys(data).map(key => `updateMask.fieldPaths=${key}`).join('&');
-  const response = await firestoreApi.patch(`${ENDPOINTS.FIRESTORE.ORDERS}/${orderId}?${updateMask}`, { fields });
-  return mapFirestoreDoc(response.data);
-};
-
-export { createOrder, getUserOrders, getOrderById, updateOrder };
+export { getCart, updateCart };

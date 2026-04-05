@@ -23,7 +23,7 @@ const getAddresses = async (userId) => {
       }
     }
   };
-  const response = await firestoreApi.post(':runQuery', query);
+  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.RUNQUERY, query);
   return response.data
     .filter(item => item.document)
     .map(item => mapFirestoreDoc(item.document));

@@ -50,7 +50,7 @@ const getReviewsByProduct = async (productId) => {
       }
     }
   };
-  const response = await firestoreApi.post(':runQuery', query);
+  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.RUNQUERY, query);
   return response.data
     .filter(item => item.document)
     .map(item => mapFirestoreDoc(item.document))
@@ -72,7 +72,7 @@ const getUserProductReview = async (userId, productId) => {
       }
     }
   };
-  const response = await firestoreApi.post(':runQuery', query);
+  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.RUNQUERY, query);
   const docs = response.data.filter(item => item.document);
   return docs.length > 0 ? mapFirestoreDoc(docs[0].document) : null;
 };

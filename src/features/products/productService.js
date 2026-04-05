@@ -43,7 +43,7 @@ const getProductsByCategory = async (categoryId, limit = 10, offset = 0) => {
       offset: offset,
     }
   };
-  const response = await firestoreApi.post(':runQuery', query);
+  const response = await firestoreApi.post(ENDPOINTS.FIRESTORE.RUNQUERY, query);
   return response.data
     .filter(item => item.document)
     .map(item => mapFirestoreDoc(item.document));
@@ -52,13 +52,6 @@ const getProductsByCategory = async (categoryId, limit = 10, offset = 0) => {
 const getProductById = async (productId) => {
   const response = await firestoreApi.get(`${ENDPOINTS.FIRESTORE.PRODUCTS}/${productId}`);
   return mapFirestoreDoc(response.data);
-};
-
-const searchProducts = async (nameRegex) => {
-  const response = await firestoreApi.get(ENDPOINTS.FIRESTORE.PRODUCTS);
-  const allProducts = response.data.documents?.map(mapFirestoreDoc) || [];
-  const regex = new RegExp(nameRegex, 'i');
-  return allProducts.filter(p => regex.test(p.name));
 };
 
 const updateProductStock = async (productId, incrementAmount) => {
@@ -84,7 +77,6 @@ export {
   getCategories, 
   getCategoryById, 
   getProductsByCategory, 
-  getProductById, 
-  searchProducts, 
+  getProductById,  
   updateProductStock 
 };
