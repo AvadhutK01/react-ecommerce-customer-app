@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSearchTerm } from '../../features/products/productSlice';
 import { logout } from '../../features/auth/authSlice';
+import { resetCart } from '../../features/cart/cartSlice';
 import { ShoppingBag, Search, ShoppingCart, Menu, X, LogOut, User, MapPin, Package } from 'lucide-react';
 
 const Header = () => {
@@ -115,7 +116,10 @@ const Header = () => {
                           Addresses
                         </Link>
                         <button 
-                          onClick={() => dispatch(logout())}
+                          onClick={() => {
+                            dispatch(logout());
+                            dispatch(resetCart());
+                          }}
                           className="w-full flex items-center gap-3 px-6 py-4 hover:bg-red-50 transition-colors text-xs font-black uppercase tracking-widest text-red-500 border-t border-gray-50 mt-2 pt-4"
                         >
                           <LogOut size={16} />
@@ -203,6 +207,7 @@ const Header = () => {
                  <button 
                   onClick={() => {
                     dispatch(logout());
+                    dispatch(resetCart());
                     setIsMenuOpen(false);
                   }}
                   className="w-full flex items-center justify-center gap-3 py-5 bg-red-50 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] mt-4 hover:bg-red-500 hover:text-white transition-all"

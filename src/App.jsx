@@ -3,10 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import AppRoutes from './routes/AppRoutes';
 import Header from './components/layout/Header';
 import { checkAuthStatus } from './features/auth/authSlice';
+import { fetchCart } from './features/cart/cartSlice';
 
 function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const token = localStorage.getItem('customer_token');
@@ -14,6 +15,12 @@ function App() {
       dispatch(checkAuthStatus());
     }
   }, [dispatch]);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.uid) {
+      dispatch(fetchCart(user.uid));
+    }
+  }, [isAuthenticated, user, dispatch]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
